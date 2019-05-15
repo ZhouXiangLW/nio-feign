@@ -18,4 +18,6 @@ public @interface EnableNioFeignClients {
 
     String[] basePackages() default {};
 
+    Class<?>[] clients() default {};
+    
 }

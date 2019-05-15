@@ -16,7 +16,6 @@ import org.springframework.core.type.ClassMetadata;
 import org.springframework.core.type.filter.AbstractClassTestingTypeFilter;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.CollectionUtils;
 import reactor.util.StringUtils;
 
 import java.util.*;
@@ -41,11 +40,13 @@ public class NioFeignClientRegister implements ImportBeanDefinitionRegistrar,
     @Override
     public void registerBeanDefinitions(AnnotationMetadata metadata,
                                         BeanDefinitionRegistry registry) {
+        registerDefaultConfiguration(metadata, registry);
         registerFeignClients(metadata, registry);
     }
 
     private void registerDefaultConfiguration(AnnotationMetadata metadata,
                                               BeanDefinitionRegistry registry) {
+
     }
 
     private void registerFeignClients(AnnotationMetadata metadata,
@@ -56,11 +57,11 @@ public class NioFeignClientRegister implements ImportBeanDefinitionRegistrar,
         Set<String> basePackages;
 
         Map<String, Object> attrs = metadata.getAnnotationAttributes(EnableNioFeignClients.class.getName());
-        AnnotationTypeFilter annotationTypeFilter = new AnnotationTypeFilter(NioFeignClient.class);
+        AnnotationTypeFilter feignClientTypeFilter = new AnnotationTypeFilter(NioFeignClient.class);
 
         final Class<?>[] clients = attrs == null ? null : (Class<?>[]) attrs.get("clients");
-        if (CollectionUtils.isEmpty(attrs)) {
-            scanner.addIncludeFilter(annotationTypeFilter);
+        if (ArrayUtils.isEmpty(clients)) {
+            scanner.addIncludeFilter(feignClientTypeFilter);
             basePackages = getBasePackages(metadata);
         } else {
             final Set<String> clientClasses = new HashSet<>();
@@ -77,8 +78,7 @@ public class NioFeignClientRegister implements ImportBeanDefinitionRegistrar,
                 }
             };
 
-            scanner.addIncludeFilter(
-                    new AllTypeFilter(Arrays.asList(filter, annotationTypeFilter)));
+            scanner.addIncludeFilter(new AllTypeFilter(Arrays.asList(filter, feignClientTypeFilter)));
         }
 
     }
@@ -97,20 +97,17 @@ public class NioFeignClientRegister implements ImportBeanDefinitionRegistrar,
         Map<String, Object> attributes = importingClassMetadata
                 .getAnnotationAttributes(EnableNioFeignClients.class.getCanonicalName());
         Set<String> basePackages = new HashSet<>();
-        String[] packages = ArrayUtils.combine((String[]) Objects.requireNonNull(attributes).get("value"),
+        String[] packages = ArrayUtils.combine(
+                (String[]) Objects.requireNonNull(attributes).get("value"),
                 (String[])attributes.get("basePackages"));
         for (String p : packages) {
             if (StringUtils.hasText(p)) {
                 basePackages.add(p);
             }
         }
-        for (Class<?> clazz : (Class[]) attributes.get("basePackageClasses")) {
-            basePackages.add(ClassUtils.getPackageName(clazz));
-        }
         if (basePackages.isEmpty()) {
             basePackages.add(ClassUtils.getPackageName(importingClassMetadata.getClassName()));
         }
-        List<Integer> list = new ArrayList<>();
         return basePackages;
     }
 

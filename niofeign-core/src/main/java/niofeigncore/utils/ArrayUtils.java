@@ -22,4 +22,8 @@ public class ArrayUtils {
         return result;
     }
 
+    public static <T> boolean isEmpty(T[] params) {
+        return params == null || params.length == 0;
+    }
+
 }
